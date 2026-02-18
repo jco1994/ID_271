@@ -1,0 +1,13 @@
+---
+title: "ID271 Midterm"
+author: "JCO"
+date: "Due Feb 22, 2026 at 11:59 PM (EST)"
+output: 
+  html_document:
+    toc_float: true
+    toc: true
+---
+
+``` {r setup}
+setwd("~\Desktop\Harvard\Courses\Spring 2026\ID 271")
+```
