@@ -1,0 +1,52 @@
+---
+title: "ID271 Midterm Instructions"
+date: "Due Feb 22, 2026 at 11:59 PM (EST)"
+output: 
+  html_document:
+    toc_float: true
+    toc: true
+---
+
+# Basics
+
+For the midterm group project, you will work in your assigned group (you can find your group on Canvas/People tag or in the announcement). Each group will upload one submission, which includes BOTH the .Rmd and the knitted .HTML files of your written response. Please make sure that the HTML file is formatted clearly and has all the output you refer to in your written answers.
+
+The approach you take to analyze the time series of mortality data is up to you. However, it should reflect what you have learned in class so far.
+
+**Due Feb 22, 2026 at 11:59 PM (EST)**
+
+# Variables
+
+You are given a dataset (`hou_pm.csv`) for Houston with the following variables:
+
+- date: Date in month/day/year
+- dow: Day of week
+- TEMP: Daily average temperature ($^\circ$F)
+- RH: Relative humidity (%)
+- pm25: Daily average PM2.5 ($\mu g/m^{-3}$)
+- tot: Total deaths
+- cvd: Cardiovascular deaths
+- resp: Respiratory deaths
+
+# Main Research Question
+
+**The research question is: What is the association of PM2.5 with total, cardiovascular, and respiratory mortality in Houston?** Answer the question as if it was a paper by writing: A) a methodology statistical analysis section and B) a results section.
+
+# Specific Questions
+
+Please make sure to answer these:
+
+- What distribution will you use for mortality? Specifically, think about the type of outcome we have (e.g., continuous, categorical, etc.).
+- What covariates will you adjust for in your models, and how do you adjust for them (e.g., as a linear/binary/categorical variable or as a smooth function, etc)? If you decide to use a smooth function, pay close attention to the method you choose (and what's the default) and the df that is appropriate given the scientific question. Please justify your choices in your write up.
+- What are the dose-response curves of mortality (total, cardiovascular, and respiratory) with same-day PM2.5?
+- Should temperature be included in the model? If so, what are the dose-response curves of mortality (total, cardiovascular, and respiratory) with same-day temperature.
+- If the association is linear, what is the relative risk of (total, cardiovascular, and respiratory) mortality for a 10 $\mu g/m^{3}$ increase in PM2.5? If the association is non-linear, report the association is a manner that you think in appropriate. Keep in mind that trade-off between interpretability and accuracy of the results should be considered.
+
+Bonus question (+1 point):
+
+- Adjusting for time trends and seasonality is a complicated question, as there are many ways to do so. If you wanted to fit a long spline, you essentially have two main methods covered in class: (1) adjusting for time using a penalized spline or (2) adjusting for time using a natural spline with 4 df per year. Which is preferred and why?
+
+This is not an exhaustive list. You should present a convincing case for whether mortality is associated with PM2.5 or not. **While encouraged, the use of lags in this midterm to explore the effect of PM2.5 from the days prior is optional (i.e., we won't take grades off for using same-day exposure only)**
+
+Defend the choices you make (with data, statistics, subject area knowledge, etc.). State clearly any assumptions you make and why you think they are reasonable.
+
