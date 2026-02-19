@@ -7,7 +7,145 @@ output:
     toc_float: true
     toc: true
 ---
-
+# Directory
 ``` {r setup}
-setwd("~\Desktop\Harvard\Courses\Spring 2026\ID 271")
+knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
 ```
+
+# Packages
+```{r, message=F}
+library(foreign)
+library(stats)
+library(mgcv)
+library(splines)
+library(nlme)
+library(lubridate)
+library(gplots)
+```
+
+```{r}
+hou_pm <- read.csv("hou_pm.csv")
+```
+
+```{r}
+names(hou_pm)
+summary(hou_pm)
+```
+
+# Check to see if mean=variance
+```{r}
+hist(hou_pm$tot)
+summary(hou_pm$tot)
+mean(hou_pm$tot)
+var(hou_pm$tot)
+```
+```{r}
+ll <- matrix(nrow=4,ncol=6)
+ll[1,] <- rep(1,6) #intercept
+ll[2,] <- 0:5 #lag0 to lag5, i term
+ll[3,] <- ll[2,]^2 #i^2 term
+ll[4,] <- ll[2,]^3 #i^3 term
+
+ll <- t(ll) #transpose
+```
+
+# Construct Z matrix; create PM2.5 and temp lags
+```{r}
+lagm<-function(x,n) {
+  nn<-length(x)
+  xn<-c(rep(NA,n),x[1:(nn-n)])
+  return(xn)
+}
+
+lenpol <- length(hou_pm[,1])
+xx<-matrix(nrow=lenpol,ncol=6)
+for (i in 1:6) {
+	xx[,i]<-lagm(hou_pm$pm25,(i-1))
+}
+
+zz<-xx %*% ll
+
+colnames(xx) <- paste0("pm25", 1:6)
+hou_pm <- cbind(hou_pm, xx)
+
+#make month variable
+hou_pm$date <-as.Date(hou_pm$date, format="%m/%d/%Y")
+hou_pm$mon<-month(hou_pm$date)
+
+#make time variable
+hou_pm$time<-1:dim(hou_pm)[1]
+hou_pm$temp1=lagm(hou_pm$TEMP,1)
+
+cor(hou_pm$TEMP[!is.na(hou_pm$temp1)],hou_pm$temp1[!is.na(hou_pm$temp1)])
+```
+
+```{r}
+try<-gam(tot~s(TEMP)+ s(temp1)+s(time)+s(RH) +as.factor(mon),data=hou_pm,method="REML")
+plot(try)
+AIC(try)
+
+try2<-gam(tot~s(TEMP,temp1)+s(time)+s(RH) +as.factor(mon),data=hou_pm,method="REML")
+plot(try2)
+AIC(try2)
+```
+
+```{r}
+mod<-gam(tot ~ s(time,bs = "cr",fx=FALSE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+s(temp1)+as.factor(dow) + RH + as.factor(mon) + zz[,1] + zz[,2] + zz[,3] +zz[,4], data=hou_pm,method="REML", na.action=na.omit)
+summary(mod)
+
+```
+
+How do we get effect estimates at each lag? Remember the equation bi=c0 +c1i +c2i^2 +c3i^3. The coefficients of the Z's are the c's. So we will need to grab them and multiply them by the appropriate weights for each i (that is, by 1 for i=1, etc)
+
+```{r}
+#obtain the coef. There are 8 variables that precede 
+# the Z's--intercept, 6 dow dummies, and RH
+#So the Z's are the 9-12th coefficients
+
+pm25_est_dl <- as.matrix(mod$coef[21:24]) #c matrix
+#now multiple them by the weights to become b's
+pm25_est <- ll%*%as.matrix(pm25_est_dl) #beta matrix
+
+#obtain the se of the b's
+
+#the b's are sums of the c's, so we need the covariance of the c's to compute the se of the b's. Vcov will give us the covariance matrix of all coefficents. We subset it the the 9:12 by 9:12 part for just the covariance of the b's
+
+pm25_cov <- ll%*%as.matrix(vcov(mod)[21:24,21:24])%*%t(ll)
+
+pm25_se <- sqrt(diag(pm25_cov))
+
+#build the effect estimates matrix for beta
+pm25_est_se <- data.frame(var=c('pm25_lag5','pm25_lag4','pm25_lag3','pm25_lag2','pm25_lag1','pm25_lag0'),
+                          coef=pm25_est,
+                          se=pm25_se)
+```
+
+####plot
+```{r}
+lags<-c(5,4,3,2,1,0)
+beta=pm25_est_se[,2]
+se=pm25_est_se[,3]
+plotCI(y=beta,x=lags,uiw=1.96*se,err="y")
+```
+
+We can compare this to the unconstrained effects.  
+
+```{r}
+#unconstrained fitting
+mod2<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=40)+s(TEMP)+s(temp1)
+          +as.factor(dow)+RH+pm25+xx[,2]+xx[,3]+xx[,4]+xx[,5]+xx[,6], 
+          family=quasipoisson, method="REML",data=hou_pm, na.action=na.omit)
+
+#plot
+lags<-c(0,1,2,3,4,5)
+beta<-c(mod2$coef[9],mod2$coef[10],mod2$coef[11],mod2$coef[12],mod2$coef[13],mod2$coef[14])
+plotCI(y=beta,x=lags,uiw=1.96*sqrt(diag(mod2$Vp[9:14,9:14])),err="y")
+```
+# Dose-response curves
+```{r}
+mod1<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+as.factor(dow)+ RH+pm25, family=quasipoisson, data=hou_pm, na.action=na.omit)
+summary(mod1)
+
+plot(mod1,scale=0,pages=1)
+```
+
