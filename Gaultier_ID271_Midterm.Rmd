@@ -1,0 +1,91 @@
+---
+title: "ID 271 Midterm"
+author: "Grace Gaultier"
+date: "2026-02-18"
+output: html_document
+---
+
+## Load Data
+```{r}
+library(foreign)
+library(stats)
+library(mgcv)
+library(splines)
+library(nlme)
+dat <- read.csv("hou_pm.csv")
+```
+
+## Summary Stats
+
+```{r}
+summary(dat)
+hist(dat$TEMP)
+hist(dat$resp)
+hist(dat$cvd)
+hist(dat$tot)
+
+plot(dat$tot)
+plot(dat$TEMP)
+plot(dat$RH)
+```
+```{r}
+hist(dat$tot)
+	summary(dat$tot)
+	mean(dat$tot)
+	var(dat$tot)
+```
+Variance is about equal to the mean, so we'll use a poisson distribution. 
+
+
+## Plot TOT model
+```{r}
+mod1<-gam(tot ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
+          family=quasipoisson, data=dat, na.action=na.omit)
+  summary(mod1)
+
+
+  plot(dat$tot)
+  plot(mod1,scale=0)
+  plot(resid(mod1))
+```
+
+
+```{r}
+hist(dat$tot) 
+	summary(dat$tot)
+	mean(dat$tot)
+	var(dat$tot)
+```
+
+
+## Plot CVD model
+```{r}
+mod_cvd<-gam(cvd ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
+          family=quasipoisson, data=dat, na.action=na.omit)
+  summary(mod_cvd)
+
+
+  plot(dat$cvd)
+  plot(mod_cvd,scale=0)
+  plot(resid(mod_cvd))
+```
+
+
+## Plot resp model
+```{r}
+mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
+          family=quasipoisson, data=dat, na.action=na.omit)
+  summary(mod_resp)
+
+
+  plot(dat$resp)
+  plot(mod_resp,scale=0)
+  plot(resid(mod_resp))
+```
+
+
+- assuming that the effect of 30 degrees is the same no matter when that 30 degrees occurs 
+  - testable hypothesis 
+
+
+
