@@ -23,9 +23,9 @@ dat$time<-1:dim(dat)[1]
 ```{r}
 summary(dat)
 hist(dat$TEMP)
-hist(dat$resp)
-hist(dat$cvd)
-hist(dat$tot)
+hist(dat$resp, main = "Histogram of Mortality Due to Respiratory Disease", xlab = "Respiratory Mortality" )
+hist(dat$cvd, main = "Histogram of Mortality Due to CVD", xlab = "CVD Mortality")
+hist(dat$tot, main = "Histogram of Total Mortality", xlab = "Total Mortality")
 
 plot(dat$tot)
 plot(dat$TEMP, dat$tot)
@@ -36,6 +36,12 @@ hist(dat$tot)
 	summary(dat$tot)
 	mean(dat$tot)
 	var(dat$tot)
+	
+	mean(dat$cvd)
+	var(dat$cvd)
+	
+	mean(dat$resp)
+	var(dat$resp)
 ```
 Variance is not equal to the mean, so we'll use a quasipoisson distribution. 
 
@@ -56,9 +62,13 @@ anova(mod1, mod10, test = "F")
 
 #Fail to reject the null hypothesis, so linear pm 2.5 is sufficient, use mod1. 
 
+plot(mod10, scale = 0)
+
   plot(dat$tot)
   plot(mod1,scale=0)
   plot(resid(mod1))
+  
+
 ```
 
 
@@ -76,10 +86,16 @@ mod_cvd<-gam(cvd ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
           family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_cvd)
 
+mod20 <- gam(cvd ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod20)
 
-  plot(dat$RH, dat$cvd)
-  plot(mod_cvd,scale=0)
-  plot(resid(mod_cvd))
+anova(mod_cvd, mod20, test = "F")
+
+
+plot(mod20,scale=0)
+plot(resid(mod20))
 ```
 
 
@@ -88,11 +104,17 @@ mod_cvd<-gam(cvd ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
 mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + RH + as.factor(dow) + TEMP + s(time, k = 41),
           family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_resp)
+  
+mod30<-gam(resp ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod30)
 
+anova(mod_resp, mod30, test = "F")
 
   plot(dat$resp)
-  plot(mod_resp,scale=0)
-  plot(resid(mod_resp))
+  plot(mod30,scale=0)
+  plot(resid(mod30))
 ```
 
 
