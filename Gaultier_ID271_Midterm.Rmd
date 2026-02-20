@@ -29,7 +29,7 @@ hist(dat$tot, main = "Histogram of Total Mortality", xlab = "Total Mortality")
 
 plot(dat$tot)
 plot(dat$TEMP, dat$tot)
-plot(dat$RH, dat$tot)
+plot(dat$pm25, dat$tot)
 ```
 ```{r}
 hist(dat$tot)
@@ -48,12 +48,12 @@ Variance is not equal to the mean, so we'll use a quasipoisson distribution.
 
 ## Plot TOT model
 ```{r}
-mod1<-gam(tot ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+mod1<-gam(tot ~ pm25 + RH + as.factor(dow) + s(TEMP, bs = "cr") + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, 
           method = "REML")
 summary(mod1)
 
-mod10<-gam(tot ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+mod10<-gam(tot ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, 
           method = "REML")
 summary(mod10)
@@ -62,7 +62,7 @@ anova(mod1, mod10, test = "F")
 
 #Fail to reject the null hypothesis, so linear pm 2.5 is sufficient, use mod1. 
 
-plot(mod10, scale = 0)
+plot(mod1, scale = 0)
 
   plot(dat$tot)
   plot(mod1,scale=0)
@@ -82,11 +82,11 @@ hist(dat$tot)
 
 ## Plot CVD model
 ```{r}
-mod_cvd<-gam(cvd ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+mod_cvd<-gam(cvd ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_cvd)
 
-mod20 <- gam(cvd ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+mod20 <- gam(cvd ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, 
           method = "REML")
 summary(mod20)
@@ -101,20 +101,20 @@ plot(resid(mod20))
 
 ## Plot resp model
 ```{r}
-mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + RH + as.factor(dow) + TEMP + s(time, k = 41),
+mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_resp)
   
-mod30<-gam(resp ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41),
+mod30<-gam(resp ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
           family=quasipoisson, data=dat, na.action=na.omit, 
           method = "REML")
 summary(mod30)
 
-anova(mod_resp, mod30, test = "F")
+anova(mod_resp, mod_resp, test = "F")
 
   plot(dat$resp)
-  plot(mod30,scale=0)
-  plot(resid(mod30))
+  plot(mod_resp,scale=0)
+  plot(resid(mod_resp))
 ```
 
 
