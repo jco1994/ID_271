@@ -21,6 +21,7 @@ library(splines)
 library(nlme)
 library(lubridate)
 library(gplots)
+library(MASS)
 ```
 
 ```{r}
@@ -35,6 +36,9 @@ summary(hou_pm)
 # Check to see if mean=variance
 ```{r}
 hist(hou_pm$tot)
+check_overdispersion(hou_pm$tot, alternative = "two.sided")
+hist(hou_pm$cvd)
+hist(hou_pm$cvd)
 summary(hou_pm$tot)
 mean(hou_pm$tot)
 var(hou_pm$tot)
@@ -143,7 +147,7 @@ plotCI(y=beta,x=lags,uiw=1.96*sqrt(diag(mod2$Vp[9:14,9:14])),err="y")
 ```
 # Dose-response curves
 ```{r}
-mod1<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+as.factor(dow)+ RH+pm25, family=quasipoisson, data=hou_pm, na.action=na.omit)
+mod1<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm, na.action=na.omit)
 summary(mod1)
 
 plot(mod1,scale=0,pages=1)
