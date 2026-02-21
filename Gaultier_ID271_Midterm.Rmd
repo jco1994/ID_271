@@ -5,6 +5,8 @@ date: "2026-02-18"
 output: html_document
 ---
 
+Just use time with month and year with 41 knots (accounts for seasonality)
+
 ## Load Data
 ```{r}
 library(foreign)
@@ -13,6 +15,7 @@ library(mgcv)
 library(splines)
 library(nlme)
 dat <- read.csv("hou_pm.csv")
+dat$time<-1:dim(dat)[1]
 ```
 
 ## Summary Stats
@@ -20,33 +23,52 @@ dat <- read.csv("hou_pm.csv")
 ```{r}
 summary(dat)
 hist(dat$TEMP)
-hist(dat$resp)
-hist(dat$cvd)
-hist(dat$tot)
+hist(dat$resp, main = "Histogram of Mortality Due to Respiratory Disease", xlab = "Respiratory Mortality" )
+hist(dat$cvd, main = "Histogram of Mortality Due to CVD", xlab = "CVD Mortality")
+hist(dat$tot, main = "Histogram of Total Mortality", xlab = "Total Mortality")
 
 plot(dat$tot)
-plot(dat$TEMP)
-plot(dat$RH)
+plot(dat$TEMP, dat$tot)
+plot(dat$pm25, dat$tot)
 ```
 ```{r}
 hist(dat$tot)
 	summary(dat$tot)
 	mean(dat$tot)
 	var(dat$tot)
+	
+	mean(dat$cvd)
+	var(dat$cvd)
+	
+	mean(dat$resp)
+	var(dat$resp)
 ```
-Variance is about equal to the mean, so we'll use a poisson distribution. 
+Variance is not equal to the mean, so we'll use a quasipoisson distribution. 
 
 
 ## Plot TOT model
 ```{r}
-mod1<-gam(tot ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
-          family=quasipoisson, data=dat, na.action=na.omit)
-  summary(mod1)
+mod1<-gam(tot ~ pm25 + RH + as.factor(dow) + s(TEMP, bs = "cr") + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod1)
 
+mod10<-gam(tot ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod10)
+
+anova(mod1, mod10, test = "F")
+
+#Fail to reject the null hypothesis, so linear pm 2.5 is sufficient, use mod1. 
+
+plot(mod1, scale = 0)
 
   plot(dat$tot)
   plot(mod1,scale=0)
   plot(resid(mod1))
+  
+
 ```
 
 
@@ -60,32 +82,41 @@ hist(dat$tot)
 
 ## Plot CVD model
 ```{r}
-mod_cvd<-gam(cvd ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
-          family=quasipoisson, data=dat, na.action=na.omit)
+mod_cvd<-gam(cvd ~ pm25 + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_cvd)
 
+mod20 <- gam(cvd ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod20)
 
-  plot(dat$cvd)
-  plot(mod_cvd,scale=0)
-  plot(resid(mod_cvd))
+anova(mod_cvd, mod20, test = "F")
+
+
+plot(mod20,scale=0)
+plot(resid(mod20))
 ```
 
 
 ## Plot resp model
 ```{r}
-mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + s(RH,k=4,fx=TRUE) + as.factor(dow) + s(TEMP,k=4,fx=TRUE),
-          family=quasipoisson, data=dat, na.action=na.omit)
+mod_resp<-gam(resp ~ s(pm25,k=4,fx=TRUE) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, method = "REML")
   summary(mod_resp)
+  
+mod30<-gam(resp ~ s(pm25) + RH + as.factor(dow) + s(TEMP) + s(time, k = 41, fx = TRUE, bs = "cr"),
+          family=quasipoisson, data=dat, na.action=na.omit, 
+          method = "REML")
+summary(mod30)
 
+anova(mod_resp, mod_resp, test = "F")
 
   plot(dat$resp)
   plot(mod_resp,scale=0)
   plot(resid(mod_resp))
 ```
 
-
-- assuming that the effect of 30 degrees is the same no matter when that 30 degrees occurs 
-  - testable hypothesis 
 
 
 
