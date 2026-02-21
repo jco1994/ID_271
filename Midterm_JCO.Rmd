@@ -36,7 +36,6 @@ summary(hou_pm)
 # Check to see if mean=variance
 ```{r}
 hist(hou_pm$tot)
-check_overdispersion(hou_pm$tot, alternative = "two.sided")
 hist(hou_pm$cvd)
 hist(hou_pm$cvd)
 summary(hou_pm$tot)
@@ -94,7 +93,7 @@ AIC(try2)
 ```
 
 ```{r}
-mod<-gam(tot ~ s(time,bs = "cr",fx=FALSE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+s(temp1)+as.factor(dow) + RH + as.factor(mon) + zz[,1] + zz[,2] + zz[,3] +zz[,4], data=hou_pm,method="REML", na.action=na.omit)
+mod<-gam(tot ~ s(time,bs = "cr",fx=FALSE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+s(temp1)+as.factor(dow) + RH + zz[,1] + zz[,2] + zz[,3] +zz[,4], data=hou_pm,method="REML", na.action=na.omit)
 summary(mod)
 
 ```
@@ -147,9 +146,18 @@ plotCI(y=beta,x=lags,uiw=1.96*sqrt(diag(mod2$Vp[9:14,9:14])),err="y")
 ```
 # Dose-response curves
 ```{r}
-mod1<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm, na.action=na.omit)
-summary(mod1)
+mod_tot<-gam(tot ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=4)+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
 
-plot(mod1,scale=0,pages=1)
+mod_cvd<-gam(cvd ~ s(time,bs = "cr",fx=TRUE,k=41)+TEMP+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm, na.action=na.omit)
+
+mod_resp<-gam(resp ~ s(time,bs = "cr",fx=TRUE,k=41)+s(TEMP,bs = "cr",fx=TRUE,k=5)+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm, na.action=na.omit ,method="REML")
+
+summary(mod1)
+model<-gam(tot ~ s(time,bs = "cr",k=41)+s(TEMP,bs = "cr",k=5)+as.factor(dow)+ RH +  s(pm25), family=quasipoisson, data=hou_pm,method="REML", na.action=na.omit)
+
+plot(mod_tot,scale=0,pages=1, main="total")
+plot(mod_cvd,scale=0,pages=1, main="cvd")
+plot(mod_resp,scale=0,pages=1, main="resp")
+plot(model,scale=0,pages=1)
 ```
 
