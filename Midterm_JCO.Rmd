@@ -48,7 +48,7 @@ summary(hou_pm$pm25)
 # Check to see if mean=variance
 
 
-
+```{r, include=FALSE}
 summary(hou_pm$tot)
 mean(hou_pm$tot)
 var(hou_pm$tot)
@@ -167,7 +167,19 @@ summary(mod_tot)$dispersion
 mod_cvd<-gam(cvd ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+TEMP+as.factor(dow)+ RH, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML") 
 summary(mod_cvd)
 mod_resp<-gam(resp ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+TEMP+as.factor(dow)+ RH, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
+
+mod_tot_notemp<-gam(tot ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+as.factor(dow)+ RH , family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML") 
+
+summary(mod_tot)$dispersion
+mod_cvd_notemp<-gam(cvd ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+as.factor(dow)+ RH, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML") 
+summary(mod_cvd)
+mod_resp_notemp<-gam(resp ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+as.factor(dow)+ RH, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
+
+anova(mod_tot_notemp, mod_tot, test = "F")
+anova(mod_cvd_notemp, mod_cvd, test = "F")
+anova(mod_resp_notemp, mod_resp, test = "F")
 summary(mod_resp)$dispersion
+
 beta_tot <- coef(mod_tot)["pm25"]
 beta_resp <- coef(mod_resp)["pm25"]
 
