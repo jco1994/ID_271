@@ -38,8 +38,10 @@ library(nlme)
 library(table1)
 library(lubridate)
 library(gplots)
+library(dplyr)
 library(ggplot2)
 library(MASS)
+library(gt)
 ```
 
 ```{r data, include=FALSE}
@@ -59,7 +61,7 @@ Using historical records data from Houston between January 1, 1999 and December 
 
 #### Study Analysis
 
-The association between same-day concentrations of $\text{PM}_{2.5}$ and the three outcomes of interest was estimated fitting generalized additive models (GAM) with a quasi-Poisson regression. When possible, relative risk (RR) was estimated between $\text{PM}_{2.5}$ and our outcomes if they seemed to have a linear relationship. A quasi-Poisson model provides an advantage over a standard Poisson regression in that it allows for data to be overdispersed. The adjusted GAMs included relative humidity (RH), day of the week (dow), average daily temperature (TEMP), and days since the start of the study (time) as relevant covariates. Time was modeled with a natural spline using 5 degrees of freedom for each of the 8 years of the study (40 degrees of freedom) to account for trends in seasonality and variation between years. Penalized splines were initially fit for relative humidity (RH) and temperature. RH and temperature were found to have linear relationship with the outcomes of interest, so the models were refit with RH and temperature as linear predictors. Splines were fitted with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting.
+The association between same-day concentrations of $\text{PM}_{2.5}$ and the three outcomes of interest was estimated fitting generalized additive models (GAM) with a quasi-Poisson regression. When possible, relative risk (RR) was estimated between $\text{PM}_{2.5}$ and our outcomes if they seemed to have a linear relationship. A quasi-Poisson model provides an advantage over a standard Poisson regression in that it allows for data to be overdispersed. The adjusted GAMs included relative humidity (RH), day of the week (dow), average daily temperature (TEMP), and days since the start of the study (time) as relevant covariates. Time was modeled with a natural spline using 5 degrees of freedom for each of the 8 years of the study (40 degrees of freedom) to account for trends in seasonality and variation between years. Penalized splines were initially fit for relative humidity (RH) and temperature. RH and temperature were found to have linear relationship with the outcomes of interest, so the models were refit with RH and temperature as linear predictors. Splines were fitted with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting. ANOVA tests were conducted to understand if adding temperature as a covariate improved model fit.
 
 $$\text{log}(\mathbb{E}[Y_{t}]) = \beta_{0} +f_{1}(PM_{t})+f_{2}(Time_{t})+\beta_{1}Temp_{t}+\beta_{2}RH_{t}+\beta_{3}Dow_{t}$$
 
@@ -67,15 +69,12 @@ There $Y_t$ is the count of mortality (total, CVD, or respiratory) on day t sinc
 
 ### Results
 
-<div class="side-by-side">
-
-<div class="text">
-
+::::: side-by-side
+::: text
 Over the 8-year study period, 2,523 had data on average same-day $\text{PM}_{2.5}$ concentration (86.34%; 2,253/2,922 days). The mean for daily all-cause, CVD, and respiratory mortality were 50.26 (variance: 62.56, SD: 7.91), 14.89 (variance: 16.70, SD: 4.09), and 3.99 (variance: 4.67, SD: 2.16), respectively (Table 1). The data for number of daily deaths by mortality outcome is right-skewed (Figure 1). Other the study period, there was a total of 126,802 recorded deaths from any cause. Of these deaths, 29.6% (37,578/126,802) were from CVD and 8% (10,066/126,802) were from respiratory disease. The median concentration of $\text{PM}_{2.5}$ was 12 $\mu g/m^3$, with the highest single day concentration being 53 $\mu g/m^3$. Average temperature over the 8 year period was 69.9° with average relative humidity being 73.08%.
+:::
 
-</div>
-
-<div class="table">
+::: table
 ```{r table1, echo=FALSE}
 hou_pm<-na.omit(hou_pm)
 label(hou_pm$tot)  <- "All-cause mortality, daily"
@@ -101,9 +100,8 @@ table1(~ tot + cvd + resp + pm25 + TEMP + RH,  data = hou_pm, caption = "<span s
        })
 
 ```
-
-</div>
-</div>
+:::
+:::::
 
 ```{r histograms, echo=FALSE}
 par(mfrow = c(1, 3), oma = c(4, 4, 4, 0), mar = c(2, 2, 2, 1)) 
@@ -115,8 +113,6 @@ mtext("Number of Deaths ", side = 2, line = 1, outer = TRUE, cex = 1.0, font = 2
 mtext("Frequency", side = 1, line = 1, outer = TRUE, cex = 1.0, font = 2)
 ```
 
-When $\text{PM}_{2.5}$ was fit with a penalized spline for the all-cause and respiratory mortality models, the estimated degrees of freedom was 1 for each. However, the model for CVD mortality showed an estimated df of 2.18. The dose-response curves for the all-cause mortality and respiratory outcomes show a linear, positive relationship $\text{PM}_{2.5}$ concentrations, with respiratory disease having larger relative risk estimates as $\text{PM}_{2.5}$ increases. The CVD mortality smooth function 
-
 ```{r models, include=FALSE}
 mod_tot<-gam(tot ~ pm25 + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor(dow), family=quasipoisson, data=hou_pm, method="REML")
 
@@ -124,6 +120,51 @@ mod_cvd<-gam(cvd ~ s(pm25) + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor
 
 mod_resp<-gam(resp ~ pm25 + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor(dow), family=quasipoisson, data=hou_pm, method="REML")
 ```
+
+::::: side-by-side
+::: text
+When $\text{PM}_{2.5}$ was fit with a penalized spline for the all-cause and respiratory mortality models, the estimated degrees of freedom was 1 for each (Supplemental). However, the model for CVD mortality showed an estimated df of 2.18 (Figure 2). The dose-response curves for the all-cause mortality and respiratory outcomes show a linear, positive relationship $\text{PM}_{2.5}$ concentrations, with respiratory disease having larger relative risk estimates as $\text{PM}_{2.5}$ increases. For the $\text{PM}_{2.5}$-CVD mortality plot, the log rate ratio peaks around 17 $\mu g/m^3$, followed by a gradual decrease at higher concentrations. The confidence intervals for all-cause and CVD mortality are wide, with the former's lower boundary crossing 1. Due to the non-linear relationship between CVD and $\text{PM}_{2.5}$, it would not be appropriate to calculate relative risk. A 10 $\mu g/m^3$ increase in $\text{PM}_{2.5}$ was associated with a 1% increase in all-cause mortality (RR=1.01, 95% CI: 0.999, 1.021) 5% increase in respiratory mortality (RR=1.05, 95% CI: 1.012, 1.092) [Table 2].
+:::
+
+::: table
+```{r pm_10inc, include=FALSE}
+b_tot<-mod_tot$coef["pm25"]
+se_tot<-sqrt(vcov(mod_tot)["pm25","pm25"])
+
+exp(b_tot*10)
+exp((b_tot -1.96*se_tot)*10)
+exp((b_tot +1.96*se_tot)*10)
+
+b_resp<-mod_resp$coef["pm25"]
+se_resp<-sqrt(vcov(mod_resp)["pm25","pm25"])
+
+exp(b_resp)
+exp((b_resp -1.96*se_resp)*10)
+exp((b_resp +1.96*se_resp)*10)
+```
+
+```{r table2, echo=FALSE}
+table2_vars <- data.frame(var=c("Coefficient (exp)","p-value", 'RR per 10 µg/m³ (95% CI)'))
+table2_clean <-  data.frame(Measure = c("Exp. Estimate", "p-value","RR per 10 µg/m³ (95% CI)"),
+  tot_mort = c("0.001","0.0005","1.01 (0.999, 1.021)"),
+  resp_mort = c("0.005","0.0019","1.05 (1.012, 1.092)")
+)
+table2_clean %>% gt() %>%
+  tab_header(title = md("**Table 2. Coefficient p-value for PM2.5 Models Where Exposure-Response Relationship was Linear**"),
+    subtitle = "Relative risk per 10 µg/m³ increase"
+  ) %>%
+
+  cols_label( Measure="Measure",
+    tot_mort="PM2.5 (all-cause mortality)",
+    resp_mort="PM2.5 (respiratory mortality)" 
+    ) %>%
+  cols_align("left", columns = Measure) %>%
+  cols_align("center", columns = -Measure)
+```
+:::
+:::::
+
+Testing the significance of temperature as a covariate, the ANOVA result for the all-cause mortality model showed a p-value below 0.05 (p-value=0.0005; residual deviance of 2583.8 and 2571.5). However, the results for CVD and respiratory mortality showed large p-values (p-values of 38 and 48, respectively). Fitting a penalized spline to temperature resulted in estimated df of 1 for all three of our outcomes (Supplemental). The refitted dose-response curves show a positive, linear relationship between temperature and daily mortality (Figure 3). However, the confidence intervals of the relative risk for each model is wide, crossing 1 for both the CVD and respiratory mortality models where temperatures are probable (e.g, mortality temperature below -20 might not provide relevant public health information to the citizens of Houston). All-cause mortality maintained an estimated relative risk above 1 for each observed temperature.
 
 ```{r doseresponse_pm25, echo=FALSE}
 par(mfrow = c(1, 3), oma = c(4, 5, 4, 1), mar = c(3, 4, 2, 1))
@@ -142,6 +183,7 @@ points(hou_pm$pm25,cilo_tot,pch=18,cex=.5)
 
 #resp
 predpm25<-predict(mod_resp,type='terms',se.fit=TRUE)
+predpm25.se<-predpm25$se.fit
 rr_resp<-(exp(predpm25$fit[,"pm25"]))
 cihi_resp <- (exp((predpm25$fit[,"pm25"] +1.96*predpm25.se[,"pm25"])))
 cilo_resp<- (exp((predpm25$fit[,"pm25"] -1.96* predpm25.se[,"pm25"])))
@@ -155,7 +197,7 @@ points(hou_pm$pm25,cilo_resp,pch=18,cex=.5)
 #CVD
 plot(mod_cvd,  select=1, scale=0, main="Cardiovascular Mortality", ylab = "Log Rate Ratio (edf = 2.18")
 
-figure2title<-'Figure 2. Dose-Response Curves for PM2.5 and Daily Mortality, Houston 1999-2006'
+figure2title<-'Figure 2. Dose-Response Curves for Same-Day PM2.5 and Daily Mortality, Houston 1999-2006'
 title_f2 <- paste(strwrap(figure2title, width = 70), collapse = "\n")
 
 mtext(title_f2, side = 3, line = 1, outer = TRUE, cex = 1, font = 2)
@@ -173,7 +215,7 @@ mod_resp_notemp<-gam(resp ~ s(pm25)+s(time,bs = "cr",fx=TRUE,k=41)+as.factor(dow
 ```
 
 ```{r doseresponse_temp, echo=FALSE}
-par(mfrow = c(3, 1), oma = c(4, 5, 4, 1), mar = c(3, 4, 2, 1))
+par(mfrow = c(1, 3), oma = c(4, 5, 4, 1), mar = c(3, 4, 2, 1))
 #all-cause
 predTEMP<-predict(mod_tot,type='terms',se.fit=TRUE)
 predTEMP.se<-predTEMP$se.fit
@@ -189,6 +231,8 @@ points(hou_pm$TEMP,cilo_tot,pch=18,cex=.5)
 
 #resp
 predTEMP<-predict(mod_resp,type='terms',se.fit=TRUE)
+predTEMP.se<-predTEMP$se.fit
+
 rr_resp<-(exp(predTEMP$fit[,"TEMP"]))
 cihi_resp <- (exp((predTEMP$fit[,"TEMP"] +1.96*predTEMP.se[,"TEMP"])))
 cilo_resp<- (exp((predTEMP$fit[,"TEMP"] -1.96* predTEMP.se[,"TEMP"])))
@@ -201,6 +245,7 @@ points(hou_pm$TEMP,cilo_resp,pch=18,cex=.5)
 
 #CVD
 predTEMP<-predict(mod_cvd,type='terms',se.fit=TRUE)
+predTEMP.se<-predTEMP$se.fit
 rr_cvd<-(exp(predTEMP$fit[,"TEMP"]))
 cihi_cvd <- (exp((predTEMP$fit[,"TEMP"] +1.96*predTEMP.se[,"TEMP"])))
 cilo_cvd<- (exp((predTEMP$fit[,"TEMP"] -1.96* predTEMP.se[,"TEMP"])))
@@ -210,13 +255,19 @@ plot(hou_pm$TEMP,rr_cvd,pch=17,ylim=c(min(cilo_cvd),max(cihi_cvd)),
 points(hou_pm$TEMP,cihi_cvd,pch=18,cex=.5)
 points(hou_pm$TEMP,cilo_cvd,pch=18,cex=.5)
 
-figure3title<-'Figure 3. Dose-Response Curves for Temperature and Daily Mortality, Houston 1999-2006'
-title_f3 <- paste(strwrap(figure3title, width = 50), collapse = "\n")
-mtext(figure3title, side = 3, line = 1, outer = TRUE, cex = 1, font = 2)
+figure3title<-'Figure 3. Dose-Response Curves for Same-Day Temperature and Daily Mortality, Houston 1999-2006'
+title_f3 <- paste(strwrap(figure3title, width = 70), collapse = "\n")
+mtext(title_f3, side = 3, line = 1, outer = TRUE, cex = 1, font = 2)
 mtext("Temperature (in Farenheit)", side = 1, line = 1, outer = TRUE, cex = 1.0, font = 2)
 ```
 
+### Discussion
 
+These results on the association between same-day $\text{PM}_{2.5}$ and daily mortality provide some evidence there is a significant relationship between the two. However, significance seems only to apply to daily mortality of a certain kind. The dose-response curve for $\text{PM}_{2.5}$ and respiratory mortality had only positive relative risk estimates and the confidence bands did not cross 1. Unlike the other two outcomes, this provides evidence that there is a significant, positive, and linear relationship between $\text{PM}_{2.5}$ and respiratory mortality. Additional evidence of this can be seen in the confidance interval for a 10-unit increase of $\text{PM}_{2.5}$, as the interval doesn't contain 1.
+
+This study was subject to many limitations. Although the ANOVA results for two of the outcomes indicated temperature should not be included in the model, the choice was made to include it. Previous studies have noted temperature as a confounder between $\text{PM}_{2.5}$ and mortality. Even though adjusting for time and RH might have accounted for most of the possible confounding, adjusting for temperature might reduce residual confounding. Additionally, we wanted to maintain our original analysis plan and be consistent in model fitting when possible. There are many ways to fit splines to capture trends and seasonality, using our REML method penalized spline approach might have over-smoothed the data. Using a natural spline of 4 df per year is another possible approach as the results would be more interpretable. However, the choice of df is arbitrary and it is a method that does not adapt to the structure of the data. The reason penalized splines, although less interpretable, offer more flexibility and efficiency. Finally, this study did not account for the lagged effect of $\text{PM}_{2.5}$ concentrations. The lagged effect of $\text{PM}_{2.5}$ might be significant driver in mortality, but that was not explored in this analysis.
+
+Overall, respiratory and same-day $\text{PM}_{2.5}$ in Houston might have a moderate linear relationship. Reduction in emissions might prove to lower overall repiratory mortality. Further studies are needed to assess the lagged effect of $\text{PM}_{2.5}$ and different forms of mortality. Additionally, studies regarding $\text{PM}_{2.5}$ and it's effect on other outcomes (e.g., neuro-cognitive disorders) will create a better public health understanding of the impacts of this pollutant.
 
 ### References
 
@@ -232,11 +283,68 @@ mtext("Temperature (in Farenheit)", side = 1, line = 1, outer = TRUE, cex = 1.0,
 2.  Chao, C. Y., Li, W., Hopke, P. K., Guo, F., Wang, Y., & Griffin, R. J. (2025). Increases in PM2.5 levels in Houston are associated with a highly recirculating sea breeze. Environmental pollution (Barking, Essex : 1987), 366, 125381. <https://doi.org/10.1016/j.envpol.2024.125381>
 
     </p>
-<a > </a>
+
+    <a > </a>
 
 ### Supplemental
 
-```{r models_allspline, include=FALSE}
+```{r modeltests, echo=FALSE}
+model_fit<-function(outcome) {
+###TEMP Spline
+  form_temp_sp<-as.formula(paste(outcome, "~ s(time,bs =   'cr',fx=TRUE,k=41)+s(TEMP)+as.factor(dow)+ RH +  s(pm25)"))
+    mod_temp_sp_g<- gam(form_temp_sp, family=quasipoisson, data=hou_pm, na.action=na.omit)
+   mod_temp_sp_r<- gam(form_temp_sp, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
+   
+  temp_sum<-summary(mod_temp_sp_g)$s.table
+  temp_edf_g<-temp_sum["s(TEMP)","edf"]
+  temp_p_g<-temp_sum["s(TEMP)","p-value"]
+  
+  temp_sum<-summary(mod_temp_sp_r)$s.table
+  temp_edf_r<-temp_sum["s(TEMP)","edf"]
+  temp_p_r<-temp_sum["s(TEMP)","p-value"]
+  
+###PM2.5 Spline 
+   form_pm25_sp<-as.formula(paste(outcome,"~ s(time,bs =   'cr',fx=TRUE,k=41)+TEMP+as.factor(dow)+ RH +  s(pm25)"))
+   mod_pm25_sp_g<- gam(form_pm25_sp, family=quasipoisson, data=hou_pm, na.action=na.omit)
+   mod_pm25_sp_r<- gam(form_pm25_sp, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
+   
+  pm25_sum<-summary(mod_pm25_sp_g)$s.table
+  pm25_edf_g<-pm25_sum["s(pm25)","edf"]
+  pm25_p_g<-pm25_sum["s(pm25)","p-value"]
+  
+    pm25_sum<-summary(mod_pm25_sp_r)$s.table
+  pm25_edf_r<-pm25_sum["s(pm25)","edf"]
+  pm25_p_r<-pm25_sum["s(pm25)","p-value"]
+  
+###RH Spline 
+   form_RH_sp<-as.formula(paste(outcome,"~ s(time,bs =   'cr',fx=TRUE,k=41)+TEMP+as.factor(dow)+ s(RH) +  s(pm25)"))
+    mod_RH_sp_g<- gam(form_RH_sp, family=quasipoisson, data=hou_pm, na.action=na.omit)
+   mod_RH_sp_r<- gam(form_RH_sp, family=quasipoisson, data=hou_pm, na.action=na.omit, method="REML")
+  RH_sum<-summary(mod_RH_sp_g)$s.table
+  RH_edf_g<-RH_sum["s(RH)","edf"]
+  RH_p_g<-RH_sum["s(RH)","p-value"] 
+  
+  RH_sum<-summary(mod_RH_sp_r)$s.table
+  RH_edf_r<-RH_sum["s(RH)","edf"]
+  RH_p_r<-RH_sum["s(RH)","p-value"]
+  
+ results<-data.frame(
+    edf_=c(temp_edf_g, pm25_edf_g, RH_edf_g, temp_edf_r, pm25_edf_r, RH_edf_r),
+    p_val_=c(temp_p_g, pm25_p_g, RH_p_g,temp_p_r, pm25_p_r, RH_p_r)
+  )
+colnames(results) <- paste0(colnames(results), outcome)
+assign(paste0("edf_", outcome), results, envir =.GlobalEnv)
+}
+model_fit("tot")
+model_fit("cvd")
+model_fit("resp")
+edf_vars<-data.frame(
+var=c("TEMP_GCV", "PM2.5_GCV", "RH_GCV", "TEMP_REML", "PM2.5_REML", "RH_REML"))
+edf_all<-cbind(edf_vars,edf_tot,edf_cvd,edf_resp)
+edf_all
+```
+
+```{r models_allspline, include=TRUE}
 mod_tot<-gam(tot ~  s(pm25) + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor(dow), family=quasipoisson, data=hou_pm, method="REML")
 
 
@@ -245,9 +353,10 @@ mod_cvd<-gam(cvd ~ s(pm25) + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor
 mod_resp<-gam(resp ~ pm25 + s(time,bs = "cr",fx=TRUE,k=41)+TEMP+ RH + as.factor(dow), family=quasipoisson, data=hou_pm, method="REML")
 ```
 
-```{r doseresponse_allsplines, echo=FALSE}
+```{r doseresponse_allsplines}
 par(mfrow=c(1,3))
 plot(mod_tot,  select=1, scale=0, main="Total Mortality")
 plot(mod_cvd,  select=1, scale=0, main="Cardiovascular Mortality")
 plot(mod_resp, select=1, scale=0, main="Respiratory Mortality",)
 ```
+:::
