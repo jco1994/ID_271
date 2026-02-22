@@ -1,0 +1,44 @@
+---
+title: "ID271 Midterm"
+author: "JCO"
+date: "Due Feb 22, 2026 at 11:59 PM (EST)"
+output: 
+  html_document:
+    toc_float: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
+```
+
+```{r packages, message=F, include=FALSE}
+library(foreign)
+library(stats)
+library(mgcv)
+library(splines)
+library(nlme)
+library(lubridate)
+library(gplots)
+library(MASS)
+```
+
+```{r data, include=FALSE}
+hou_pm <- read.csv("hou_pm.csv")
+```
+
+### Background
+Emissions from both natural and anthropogenic sources can create  particulate matter (PM) small enough to contribute to adverse health effects in humans (e.g., damage to lung function, asthma) and contribute to environmental damage (e.g., acid rain effects, disruption of nutrient balance in soil and rivers)$\text{.}^{1}$) PM with a diameter of 2.5 micrometers or smaller $\text{PM}_{2.5}$ are considered fine inhalable particles that can penetrate deeper into the lungs than larger PM. Houston is a large U.S. city with a large urban population. High PM emissions from vehicles, industry, and other sources may pose a risk to population health. 
+An observational time-series analysis was conducted to further understand the association between same-day exposure of $\text{PM}_{2.5}$ and daily mortality.
+
+### Methods
+Using historical records data from Houston between January 1, 1999 and December 31, 2006, daily deaths, $\text{PM}_{2.5}$ concentration, and meteorlogic were extracted to analyze the association between $\text{PM}_{2.5}$ and three outcomes of interest: all-cause mortality, cardiovascular disease-related mortality, and respiratory disease-related mortality.
+
+#Study Analysis
+
+The association between same-day exposure of $\text{PM}_{2.5}$ and the three outcomes of interest was estimated fitting generalized additive models (GAM) with a quasi-Poisson regression. When possible, relative risk (RR) was estimated between $\text{PM}_{2.5}$ and our outcomes if they seemed to have a linear relationship. A quasi-Poisson model provides an advantage over a standard Poisson regression in that it allows for data to be overdispersed. The adjusted GAMs included relative humidity (RH), day of the week (dow), average daily temperature (TEMP), and days since the start of the study (time) as relevant covariates. Time was modeled with a natural spline using 5 degrees of freedom for each of the 8 years of the study (40 df in total) to account for trends in seasonality and variation between years. Penalized splines were initially fit for relative humidity (RH) and temperature. RH and temperature were found to have linear in the penalized regression, so the model was refit with RH and temperature as linear predictors (dose response figures). Splines were fitted with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting.
+
+###References
+1. EPA. Particulate Matter (PM) Basics. https://www.epa.gov/pm-pollution/particulate-matter-pm-basics. Last updated May 2025.
+2. Chao, C. Y., Li, W., Hopke, P. K., Guo, F., Wang, Y., & Griffin, R. J. (2025). Increases in PM2.5 levels in Houston are associated with a highly recirculating sea breeze. Environmental pollution (Barking, Essex : 1987), 366, 125381. https://doi.org/10.1016/j.envpol.2024.125381
+
