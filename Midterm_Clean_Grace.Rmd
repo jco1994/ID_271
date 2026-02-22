@@ -63,11 +63,17 @@ The association between same-day concentrations of $\text{PM}_{2.5}$ and the thr
 Penalized splines were initially fit for relative humidity (RH) and temperature. Through the flexible modeling, RH and temperature were found to have linear relationships with the outcomes of interest, so the models were refit with RH and temperature as linear predictors. Splines were fit with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting. Analysis of variance (ANOVA) tests were conducted for each outcome, testing the null hypothesis that the model without temperature was sufficient, and the alternative hypothesis that temperature is necessary in the model.
 
 
-A generic model for all three outcomes is below.   
+A generic model for the all cause mortality and respiratory related mortality is below.   
+
+$$\text{log}(\mathbb{E}[Y_{t}]) = \beta_{0} +f_{1}(Time_{t})+\beta_{1}(PM_{t}) +\beta_{2}Temp_{t}+\beta_{3}RH_{t}+\beta_{4}Dow_{t}$$
+
+Where $Y_t$ is the count of mortality (total or respiratory) on day t since the beginning of the study, RH is the same day average relative humidity (%), Temp is the same day average temperature (Fahrenheit), $\text{PM}_{2.5}$ is the same day average fine particulate matter concentration (in $\mu g/m^3$), and day of week (dow) was included as an indicator variable in this model.
+
+A model for the CVD related mortality is below. 
 
 $$\text{log}(\mathbb{E}[Y_{t}]) = \beta_{0} +f_{1}(PM_{t})+f_{2}(Time_{t})+\beta_{1}Temp_{t}+\beta_{2}RH_{t}+\beta_{3}Dow_{t}$$
+Where $Y_t$ is the count of mortality (CVD) on day t since the beginning of the study, RH is the same day average relative humidity (%), Temp is the same day average temperature (Fahrenheit), $\text{PM}_{2.5}$ is the same day average fine particulate matter concentration (in $\mu g/m^3$), and day of week (dow) was included as an indicator variable in this model.
 
-Where $Y_t$ is the count of mortality (total, CVD, or respiratory) on day t since the beginning of the study, RH is the same day average relative humidity (%), Temp is the same day average temperature (Fahrenheit), $\text{PM}_{2.5}$ is the same day average fine particulate matter concentration (in $\mu g/m^3$), and day of week (dow) was included as an indicator variable in this model.
 
 ### Results
 
