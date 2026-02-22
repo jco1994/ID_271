@@ -47,10 +47,7 @@ summary(hou_pm$pm25)
 
 # Check to see if mean=variance
 
-```{r, include=FALSE}
-hist(hou_pm$tot)
-hist(hou_pm$cvd)
-hist(hou_pm$resp)
+
 
 summary(hou_pm$tot)
 mean(hou_pm$tot)
@@ -67,21 +64,16 @@ var(hou_pm$resp)
 ```
 
 ```{r table1}
-
-# Set variable labels
-label(hou_pm$tot)  <- "All-cause mortality (daily)"
-label(hou_pm$cvd)  <- "Cardiovascular mortality (daily)"
-label(hou_pm$resp) <- "Respiratory mortality (daily)"
+label(hou_pm$tot)  <- "All-cause mortality (mean [SD])"
+label(hou_pm$cvd)  <- "Cardiovascular mortality (mean [SD])"
+label(hou_pm$resp) <- "Respiratory mortality (mean [SD])"
 label(hou_pm$pm25) <- "PM2.5 (µg/m³)"
-label(hou_pm$TEMP) <- "Temperature (°C)"
+label(hou_pm$TEMP) <- "Temperature (°F)"
 label(hou_pm$RH)   <- "Relative Humidity (%)"
 
-# Create Table 1
-table1(~ tot + cvd + resp + pm25 + TEMP + RH, 
-       data = hou_pm,
-       overall = TRUE,
+table1(~ tot + cvd + resp + pm25 + TEMP + RH,  data = hou_pm, overall = "Descriptive Statistics",
        render.continuous = function(x) {
-         c("Mean (SD)" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),
+         c("Mean [SD]" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),
            "Min, 25th, Median, 75th, Max" = sprintf("%.2f, %.2f, %.2f, %.2f, %.2f",
                                                       min(x, na.rm = TRUE),
                                                       quantile(x, 0.25, na.rm = TRUE),
@@ -92,31 +84,6 @@ table1(~ tot + cvd + resp + pm25 + TEMP + RH,
 ```
 
 ```{r}
-ll <- matrix(nrow=4,ncol=6)
-ll[1,] <- rep(1,6) #intercept
-ll[2,] <- 0:5 #lag0 to lag5, i term
-ll[3,] <- ll[2,]^2 #i^2 term
-ll[4,] <- ll[2,]^3 #i^3 term
-
-ll <- t(ll) #transpose
-```
-
-```{r zmatrix, exclude=TRUE}
-
-lagm<-function(x,n) {
-  nn<-length(x)
-  xn<-c(rep(NA,n),x[1:(nn-n)])
-  return(xn)
-}
-
-lenpol <- length(hou_pm[,1])
-xx<-matrix(nrow=lenpol,ncol=6)
-for (i in 1:6) {
-	xx[,i]<-lagm(hou_pm$pm25,(i-1))
-}
-
-zz<-xx %*% ll
-
 colnames(xx) <- paste0("pm25", 1:6)
 hou_pm <- cbind(hou_pm, xx)
 
