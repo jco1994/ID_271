@@ -18,10 +18,13 @@ knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
 
 ```{r, message=F, include=FALSE}
 library(foreign)
+library(dplyr)
+library(tidyr)
 library(knitr)
 library(kableExtra)
 library(stats)
 library(mgcv)
+library(table1)
 library(splines)
 library(nlme)
 library(gt)
@@ -61,6 +64,31 @@ var(hou_pm$cvd)
 summary(hou_pm$resp)
 mean(hou_pm$resp)
 var(hou_pm$resp)
+```
+
+```{r table1}
+
+# Set variable labels
+label(hou_pm$tot)  <- "All-cause mortality (daily)"
+label(hou_pm$cvd)  <- "Cardiovascular mortality (daily)"
+label(hou_pm$resp) <- "Respiratory mortality (daily)"
+label(hou_pm$pm25) <- "PM2.5 (µg/m³)"
+label(hou_pm$TEMP) <- "Temperature (°C)"
+label(hou_pm$RH)   <- "Relative Humidity (%)"
+
+# Create Table 1
+table1(~ tot + cvd + resp + pm25 + TEMP + RH, 
+       data = hou_pm,
+       overall = TRUE,
+       render.continuous = function(x) {
+         c("Mean (SD)" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),
+           "Min, 25th, Median, 75th, Max" = sprintf("%.2f, %.2f, %.2f, %.2f, %.2f",
+                                                      min(x, na.rm = TRUE),
+                                                      quantile(x, 0.25, na.rm = TRUE),
+                                                      median(x, na.rm = TRUE),
+                                                      quantile(x, 0.75, na.rm = TRUE),
+                                                      max(x, na.rm = TRUE)))
+       })
 ```
 
 ```{r}

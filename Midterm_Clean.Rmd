@@ -1,12 +1,29 @@
 ---
-title: "ID271 Midterm"
-author: "JCO"
-date: "Due Feb 22, 2026 at 11:59 PM (EST)"
+title: "Association of Same-Day Ambient Fine Particulate Matter with Mortality"
+author: "Anton Roche, Grace Gaultier, and Joel Chavez Ortiz"
+date: "ID 271 - Midterm"
 output: 
   html_document:
     toc_float: true
     toc: true
 ---
+
+```{css, echo=FALSE}
+.hanging-indent p {
+  padding-left: 2em;
+  text-indent: -2em;}
+.side-by-side {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+.side-by-side .text {
+  flex: 1;
+}
+.side-by-side .table {
+  flex: 1.2;
+}
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
@@ -18,6 +35,7 @@ library(stats)
 library(mgcv)
 library(splines)
 library(nlme)
+library(table1)
 library(lubridate)
 library(gplots)
 library(MASS)
@@ -28,17 +46,83 @@ hou_pm <- read.csv("hou_pm.csv")
 ```
 
 ### Background
-Emissions from both natural and anthropogenic sources can create  particulate matter (PM) small enough to contribute to adverse health effects in humans (e.g., damage to lung function, asthma) and contribute to environmental damage (e.g., acid rain effects, disruption of nutrient balance in soil and rivers)$\text{.}^{1}$) PM with a diameter of 2.5 micrometers or smaller $\text{PM}_{2.5}$ are considered fine inhalable particles that can penetrate deeper into the lungs than larger PM. Houston is a large U.S. city with a large urban population. High PM emissions from vehicles, industry, and other sources may pose a risk to population health. 
-An observational time-series analysis was conducted to further understand the association between same-day exposure of $\text{PM}_{2.5}$ and daily mortality.
+
+Emissions from both natural and anthropogenic sources can create particulate matter (PM) small enough to contribute to adverse health effects in humans (e.g., damage to lung function, asthma) and contribute to environmental damage (e.g., acid rain effects, disruption of nutrient balance in soil and rivers)$\text{.}^{1}$) PM with a diameter of 2.5 micrometers or smaller $\text{PM}_{2.5}$ are considered fine inhalable particles that can penetrate deeper into the lungs than larger PM. Houston is a large U.S. city with a large urban population. High PM emissions from vehicles, industry, and other sources may pose a risk to population health. An observational time-series analysis was conducted to further understand the association between same-day ambient concentrations of $\text{PM}_{2.5}$ and daily mortality.
 
 ### Methods
-Using historical records data from Houston between January 1, 1999 and December 31, 2006, daily deaths, $\text{PM}_{2.5}$ concentration, and meteorlogic were extracted to analyze the association between $\text{PM}_{2.5}$ and three outcomes of interest: all-cause mortality, cardiovascular disease-related mortality, and respiratory disease-related mortality.
 
-#Study Analysis
+Using historical records data from Houston between January 1, 1999 and December 31, 2006, daily deaths, $\text{PM}_{2.5}$ concentration, and meteorlogic were extracted to analyze the association between $\text{PM}_{2.5}$ and three outcomes of interest: all-cause mortality, cardiovascular (CVD) disease-related mortality, and respiratory disease-related mortality.
 
-The association between same-day exposure of $\text{PM}_{2.5}$ and the three outcomes of interest was estimated fitting generalized additive models (GAM) with a quasi-Poisson regression. When possible, relative risk (RR) was estimated between $\text{PM}_{2.5}$ and our outcomes if they seemed to have a linear relationship. A quasi-Poisson model provides an advantage over a standard Poisson regression in that it allows for data to be overdispersed. The adjusted GAMs included relative humidity (RH), day of the week (dow), average daily temperature (TEMP), and days since the start of the study (time) as relevant covariates. Time was modeled with a natural spline using 5 degrees of freedom for each of the 8 years of the study (40 df in total) to account for trends in seasonality and variation between years. Penalized splines were initially fit for relative humidity (RH) and temperature. RH and temperature were found to have linear in the penalized regression, so the model was refit with RH and temperature as linear predictors (dose response figures). Splines were fitted with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting.
+#### Study Analysis
 
-###References
-1. EPA. Particulate Matter (PM) Basics. https://www.epa.gov/pm-pollution/particulate-matter-pm-basics. Last updated May 2025.
-2. Chao, C. Y., Li, W., Hopke, P. K., Guo, F., Wang, Y., & Griffin, R. J. (2025). Increases in PM2.5 levels in Houston are associated with a highly recirculating sea breeze. Environmental pollution (Barking, Essex : 1987), 366, 125381. https://doi.org/10.1016/j.envpol.2024.125381
+The association between same-day concentrations of $\text{PM}_{2.5}$ and the three outcomes of interest was estimated fitting generalized additive models (GAM) with a quasi-Poisson regression. When possible, relative risk (RR) was estimated between $\text{PM}_{2.5}$ and our outcomes if they seemed to have a linear relationship. A quasi-Poisson model provides an advantage over a standard Poisson regression in that it allows for data to be overdispersed. The adjusted GAMs included relative humidity (RH), day of the week (dow), average daily temperature (TEMP), and days since the start of the study (time) as relevant covariates. Time was modeled with a natural spline using 5 degrees of freedom for each of the 8 years of the study (40 degrees of freedom) to account for trends in seasonality and variation between years. Penalized splines were initially fit for relative humidity (RH) and temperature. RH and temperature were found to have linear in the penalized regression, so the model was refit with RH and temperature as linear predictors (dose response figures). Splines were fitted with cubic regression smoothing functions generated from restricted maximum likelihood (REML) for more stable parameter estimation and less overfitting.
+
+$$\text{log}(\mathbb{E}[Y_{t}]) = \beta_{0} +f_{1}(PM_{t})+f_{2}(Time_{t})+\beta_{1}Temp_{t}+\beta_{2}RH_{t}+\beta_{3}Dow_{t}$$There $Y_t$ is the count of mortality (total, CVD, or respiratory) on day t since the beginning of the study, RH is the same day average relative humidity (%), Temp is the same day average temperature (Fahrenheit), $\text{PM}_{2.5}$ is the same day average fine particulate matter concentration (in $\mu g/m^3$), and dow is the day of the week as a categorical variable defined from 1 (Monday) through 7 (Sunday).
+
+<div class="side-by-side">
+
+<div class="text">
+
+### Results
+
+Table 1 presents descriptive statistics for daily mortality outcomes, $\text{PM}_{2.5}$ concentrations, temperature, and relative humidity in Houston  from 1999–2006. Mortality variables include variance to assess dispersion. The mean of total mortality was 50.08, and the variance was 62.28. The mean of CVD deaths was 14.89 and the variance was 16.56. The mean of respiratory deaths was 3.989 and the variance of respiratory deaths is 4.67. The average e 
+
+</div>
+
+<div class="table">
+```{r table1, echo=FALSE}
+label(hou_pm$tot)  <- "All-cause mortality"
+label(hou_pm$cvd)  <- "Cardiovascular mortality"
+label(hou_pm$resp) <- "Respiratory mortality"
+label(hou_pm$pm25) <- "PM2.5 (µg/m³)"
+label(hou_pm$TEMP) <- "Temperature (°F)"
+label(hou_pm$RH)   <- "Relative Humidity (%)"
+
+table1(~ tot + cvd + resp + pm25 + TEMP + RH,  data = hou_pm, overall = "Mean (SD)",
+       render.continuous = function(x) {
+         
+         varname <- attr(x, "label")
+
+         # Mortality variables: show Mean, SD, and Variance
+         if (varname %in% c("All-cause mortality",
+                            "Cardiovascular mortality",
+                            "Respiratory mortality")) {
+         c("Mean (SD])" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),
+           "Variance" = sprintf("%.2f", var(x, na.rm = TRUE)),
+           "Min, 25th, Median, 75th, Max" = sprintf("%.0f, %.0f, %.0f, %.0f, %.0f",
+                                                      min(x, na.rm = TRUE),
+                                                      quantile(x, 0.25, na.rm = TRUE),
+                                                      median(x, na.rm = TRUE),
+                                                      quantile(x, 0.75, na.rm = TRUE),
+                                                      max(x, na.rm = TRUE)))
+         }
+        else {
+            c("Mean (SD])" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),
+            "Min, 25th, Median, 75th, Max" = sprintf("%.0f, %.0f, %.0f, %.0f, %.0f",
+                                                      min(x, na.rm = TRUE),
+                                                      quantile(x, 0.25, na.rm = TRUE),
+                                                      median(x, na.rm = TRUE),
+                                                      quantile(x, 0.75, na.rm = TRUE),
+                                                      max(x, na.rm = TRUE)))
+        }
+       })
+```
+
+</div>
+</div>
+#### References
+
+::: hanging-indent
+<p>
+
+1.  EPA. Particulate Matter (PM) Basics. <https://www.epa.gov/pm-pollution/particulate-matter-pm-basics>. Last updated May 2025.
+
+    </p>
+
+<p>
+
+2.  Chao, C. Y., Li, W., Hopke, P. K., Guo, F., Wang, Y., & Griffin, R. J. (2025). Increases in PM2.5 levels in Houston are associated with a highly recirculating sea breeze. Environmental pollution (Barking, Essex : 1987), 366, 125381. <https://doi.org/10.1016/j.envpol.2024.125381>
+
+    </p>
+
 
