@@ -41,7 +41,7 @@ library(gt)
 ```
 
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
+knitr::opts_knit$set(root.dir = "")
 ```
 
 ```{r data, include=FALSE}
