@@ -1,0 +1,86 @@
+---
+title: "ID271 Midterm"
+author: "JCO"
+date: "Due Feb 22, 2026 at 11:59 PM (EST)"
+output: 
+  html_document:
+    toc_float: true
+    toc: true
+---
+
+### Methods
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "~/Desktop/Harvard/Courses/Spring 2026/ID 271")
+```
+
+# Packages
+
+```{r, message=F, include=FALSE}
+library(foreign)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+library(stats)
+library(mgcv)
+library(table1)
+library(splines)
+library(nlme)
+library(gt)
+library(lubridate)
+library(gplots)
+library(MASS)
+library(tidyverse)
+library(nlme)
+```
+
+```{r, include=FALSE}
+nas <- readRDS("nas_bp.rds")
+nas$DATE <-as.Date(nas$DATE, format="%m/%d/%Y")
+nas$WKDAY <- factor(nas$WKDAY, levels = 1:7) 
+```
+
+```{r}
+summary(nas$SBP)
+hist(nas$BMI)
+hist(nas$AGE)
+hist(nas$SBP)
+hist(nas$BC24H)
+hist(nas$TEMPC24H)
+hist(nas$RHUM24H)
+hist(nas$NEDUC)
+
+
+hist(log(nas$SBP))
+
+```
+
+```{r sameday_model_sp_v1}
+sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+plot(sameday_sp$gam,  scale = 0)
+cor(nas$WARMCOLD, nas$SINETIME)
+cor(nas$WARMCOLD, nas$COSTIME)
+summary(sameday_sp$lme)
+```
+
+#coldwarm should be removed, highly collinear with COSTIME (representative of WINTER and SUMMER)
+```{r sameday_model_sp_v2}
+sameday_sp2 <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+plot(sameday_sp2$gam,  scale = 0)
+summary(sameday_sp2$lme)
+```
+
+
+```{r sameday_model}
+hist(sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2], main="Distribution of BC24H Slopes by ID", xlab="BC24H on log SBP")
+
+ID<-unique(nas$ID)
+ 
+plot(ID,sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2] )
+abline(lsfit(ID,(sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2])),col=3)
+```
+
+
+
+
