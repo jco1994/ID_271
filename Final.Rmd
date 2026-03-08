@@ -57,16 +57,16 @@ hist(log(nas$SBP))
 ```
 
 ```{r sameday_model_sp_v1}
-sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
 plot(sameday_sp$gam,  scale = 0)
 cor(nas$WARMCOLD, nas$SINETIME)
 cor(nas$WARMCOLD, nas$COSTIME)
 summary(sameday_sp$lme)
 ```
 
-#coldwarm should be removed, highly collinear with COSTIME (representative of WINTER and SUMMER)
+#coldwarm should be removed, highly collinear with COSTIME (representative of WINTER and SUMMER); however need to keep in the model because of one of the questiosn
 ```{r sameday_model_sp_v2}
-sameday_sp2 <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+sameday_sp2 <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
 plot(sameday_sp2$gam,  scale = 0)
 summary(sameday_sp2$lme)
 ```
@@ -80,7 +80,5 @@ ID<-unique(nas$ID)
 plot(ID,sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2] )
 abline(lsfit(ID,(sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2])),col=3)
 ```
-
-
 
 
