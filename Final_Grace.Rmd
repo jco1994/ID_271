@@ -77,7 +77,7 @@ plot(ID,sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2] )
 abline(lsfit(ID,(sameday_sp2$lme$coef$random$ID[,2]+sameday_sp2$lme$coef$fixed[2])),col=3)
 ```
  Are there any subgroups that are particularly vulnerable to the effect of same-day BC exposure on SBP?
- - No (out of age, race, BMI )
+ - No (out of age, race, BMI, statin, smoking ) YES CHD
  Does diabetes status modify the effect of same-day BC exposure on SBP? If so, provide the effect estimates (with 95% CI) between BC and SBP among diabetics and non-diabetics, respectively.
  - No 
 
@@ -92,10 +92,23 @@ sameday_sp5 <- gamm(log(SBP) ~ BC24H*DIABETE + BMI + WARMCOLD + s(AGE) + TEMPC24
 plot(sameday_sp5$gam,  scale = 0)
 summary(sameday_sp5$lme) #diabetes not significant 
 
-sameday_sp6 <- gamm(log(SBP) ~ BC24H*BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+sameday_sp6 <- gamm(log(SBP) ~ BC24H*BMI + WARMCOLD BMI + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
 plot(sameday_sp6$gam,  scale = 0)
 summary(sameday_sp6$lme) #ns
+
+sameday_sp7 <- gamm(log(SBP) ~ BC24H*STATIN + WARMCOLD + BMI + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + BMI + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+plot(sameday_sp7$gam,  scale = 0)
+summary(sameday_sp7$lme) #ns
+
+sameday_sp8 <- gamm(log(SBP) ~ BC24H*CHD + WARMCOLD + s(AGE) + BMI + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+plot(sameday_sp8$gam,  scale = 0)
+summary(sameday_sp8$lme) #SIGNIFICANT
+
+sameday_sp8 <- gamm(log(SBP) ~ BC24H*as.factor(SMK) + WARMCOLD + s(AGE) + CHD + BMI + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+plot(sameday_sp8$gam,  scale = 0)
+summary(sameday_sp8$lme) #ns
 ```
+
 
 
 
