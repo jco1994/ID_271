@@ -1,0 +1,78 @@
+---
+title: "ID271 Final Exam"
+author: "Grace Gaultier"
+date: "2026-03-12"
+output: html_document
+---
+
+
+# Methods
+```{r, message=F, include=FALSE}
+library(foreign)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+library(stats)
+library(mgcv)
+library(table1)
+library(splines)
+library(nlme)
+library(gt)
+library(lubridate)
+library(gplots)
+library(MASS)
+library(tidyverse)
+library(nlme)
+```
+
+```{r include=FALSE}
+nas <- readRDS("nas_bp.rds")
+nas$DATE <-as.Date(nas$DATE, format="%m/%d/%Y")
+nas$WKDAY <- factor(nas$WKDAY, levels = 1:7) 
+```
+
+
+This analysis used a subset of data from participants of the Veterans Administration Normative Aging Study (NAS) which was established in 1963. It included men aged 21 to 80 years who were free of known chronic medical conditions by an initial screening. Longitudinal data on the men’s pulmonary function, heart rate variability, and blood pressure were measured every four years. During the follow-up period, black carbon (BC), temperature, and relative humidity were measured. The dataset used in analysis consists of 968 subjects and 2454 observations. 
+This study aimed to analyze the association between same-day temperature and BC exposure with systolic blood pressure (SBP), explore any effect heterogeneity caused by any covariates, and examine any potential lagged effects of temperature and BC exposure on SBP. Because the dataset contains repeated measurements for each participant, we fit a linear mixed-effects model with a random intercept for subject ID to account for within-subject correlation over time. Effect estimates and corresponding 95% confidence intervals were obtained from the mixed-effects model. Observations with missing covariate data were excluded using complete-case analysis. 
+The mixed-effects model assumes a linear relationship between predictors and the outcome on the transformed scale, independence of observations conditional on random effects, normally distributed residual errors, normally distributed random effects, and constant residual variance. Additionally, the model assumes that random effects are independent of residual errors and that the random-effects structure appropriately captures the within-subject correlation. 
+The outcome, SBP, was right skewed and was therefore log-transformed to better approximate normality of residuals and stabilize variance (Figure 1). 
+
+```{r echo=FALSE}
+hist(nas$SBP,
+     xlab = "SBP",
+     main = "Histogram of Systolic Blood Pressure")
+hist(log(nas$SBP),
+     xlab = "Log(SBP)",
+     main = "Log Transformed SBP")
+```
+
+
+
+Same-day BC exposure and temperature were included as linear terms based on preliminary dose-response assessments and prior literature indicating approximately linear relationships within the observed exposure ranges (Figure 2).(1)
+
+```{r echo=FALSE}
+sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+plot(sameday_sp$gam, select = 2, scale = 0) 
+plot(sameday_sp$gam, select = 4, scale = 0) 
+```
+
+
+
+Age was modeled using a penalized spline to allow for potential nonlinear associations with SBP while avoiding overfitting (Figure 3).
+
+```{r}
+plot(sameday_sp$gam, select = 3, scale = 0)
+```
+
+
+Additional covariates include body mass index (BMI), relative humidity, race, smoking status, alcohol consumption, diabetes status, statin use, coronary heart disease status, fasting blood glucose category and education level. These variables were included based on prior literature indicating that cardiometabolic risk factors, health behaviors, and weather-related factors may be associated with blood pressure and may also confound the association between short-term air pollution exposure and SBP. (1, 2) To control for seasonal patterns and temporal trends, sine and cosine terms representing annual periodicity (SINETIME and COSTIME) and day of the week indicators were included in the model. 
+Preliminary exploratory analyses were conducted to assess exposure-response relationships and guide model specification. Dose-response curves for BC exposure, same-day temperature, and age were examined to evaluate functional form.
+Effect modification was evaluated by including interaction terms between BC exposure and selected covariates, including diabetes status, age, race, BMI, smoking status, statin use, and coronary heart disease (CHD). Interaction terms were evaluated to identify potentially vulnerable subgroups. To evaluate whether the association between temperature and SBP differed between warm and cold seasons, an interaction term between same-day temperature and season (WARMCOLD) was included in the model. All analyses were conducted in R using the mgcv and nlme packages. 
+ 
+
+
+
+
+
+

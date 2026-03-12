@@ -92,7 +92,7 @@ sameday_sp5 <- gamm(log(SBP) ~ BC24H*DIABETE + BMI + WARMCOLD + s(AGE) + TEMPC24
 plot(sameday_sp5$gam,  scale = 0)
 summary(sameday_sp5$lme) #diabetes not significant 
 
-sameday_sp6 <- gamm(log(SBP) ~ BC24H*BMI + WARMCOLD BMI + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
+sameday_sp6 <- gamm(log(SBP) ~ BC24H*BMI + WARMCOLD + BMI + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY)+  as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1 + VISIT), family = gaussian(), data = nas)
 plot(sameday_sp6$gam,  scale = 0)
 summary(sameday_sp6$lme) #ns
 
