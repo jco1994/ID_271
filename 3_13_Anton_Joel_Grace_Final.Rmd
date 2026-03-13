@@ -1,0 +1,258 @@
+---
+title: "ID271 Final Exam"
+author: "Grace Gaultier, Anton Roche, and Joel Chavez Ortiz"
+date: "2026-03-13"
+output: html_document
+---
+
+```{css, echo=FALSE}
+.hanging-indent p {
+  padding-left: 2em;
+  text-indent: -2em;}
+.side-by-side {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+.side-by-side .text {
+  flex: 1;
+}
+.side-by-side .table {
+  flex: 1.2;
+}
+```
+
+### Methods
+
+```{r, message=F, include=FALSE}
+library(foreign)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+library(stats)
+library(mgcv)
+library(table1)
+library(splines)
+library(nlme)
+library(gt)
+library(lubridate)
+library(gplots)
+library(MASS)
+library(tidyverse)
+library(nlme)
+library(dlnm)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/Users/antonroche/Library/CloudStorage/Dropbox/School/Spring 2026/Adv Regression/Data")
+```
+
+```{r include=FALSE}
+nas <- readRDS("nas_bp.rds")
+nas$DATE <-as.Date(nas$DATE, format="%m/%d/%Y")
+nas$WKDAY <- factor(nas$WKDAY, levels = 1:7) 
+```
+
+This analysis used a subset of data from participants of the Veterans Administration Normative Aging Study (NAS) which was established in 1963. It included men aged 21 to 80 years who were free of known chronic medical conditions by an initial screening. Longitudinal data on the men’s pulmonary function, heart rate variability, and blood pressure were measured every four years. During the follow-up period, black carbon (BC), temperature, and relative humidity were measured. The dataset used in this analysis consists of 968 subjects and 2454 observations. This study aimed to analyze the association between same-day temperature and BC exposure with systolic blood pressure (SBP), explore any effect heterogeneity caused by any covariates, and examine any potential lagged effects of temperature and BC exposure on SBP. Because the dataset contains repeated measurements for each participant, we fit a linear mixed-effects model with a random intercept for subject ID to account for within-subject correlation over time. Effect estimates and corresponding 95% confidence intervals were obtained from the mixed-effects model. Observations with missing covariate data were excluded using complete-case analysis. The mixed-effects model assumes a linear relationship between predictors and the outcome on the transformed scale, independence of observations conditional on random effects, normally distributed residual errors, normally distributed random effects, and constant residual variance. Additionally, the model assumes that random effects are independent of residual errors and that the random-effects structure appropriately captures the within-subject correlation. The outcome, SBP, was right skewed and was therefore log-transformed to better approximate normality of residuals and stabilize variance (Figure 1).
+
+```{r echo=FALSE}
+hist(nas$SBP,
+     xlab = "SBP",
+     main = "Histogram of Systolic Blood Pressure")
+hist(log(nas$SBP),
+     xlab = "Log(SBP)",
+     main = "Log Transformed SBP")
+```
+
+Same-day BC exposure and temperature were included as linear terms based on preliminary dose-response assessments and prior literature indicating approximately linear relationships within the observed exposure ranges (Figure 2).$^1$
+
+**Figure 2. Dose Response Curves for Continuous Covariates and Log SBP**
+
+```{r, include=FALSE}
+cor(nas[, c("BC24H", "BCD1", "BCD2")])
+```
+
+```{r echo=FALSE}
+sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+
+movingavg_sp <- gamm(log(SBP) ~ s(BMI)+ s(BCMA2) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+#AIC(movingavg_sp$lme)
+lag_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H)+ BCD1+ BCD2 + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+#summary(lag_sp$lme)
+plot(lag_sp$gam, scale=0)
+#plot(movingavg_sp$gam, scale=0, select=2)
+plot(sameday_sp$gam, scale=0)
+
+```
+
+Age was modeled using a penalized spline to allow for potential nonlinear associations with SBP while avoiding overfitting (Figure 2).
+
+Additional covariates include body mass index (BMI), relative humidity, race, smoking status, alcohol consumption, diabetes status, statin use, coronary heart disease status, fasting blood glucose category and education level. These variables were included based on prior literature indicating that cardiometabolic risk factors, health behaviors, and weather-related factors may be associated with blood pressure and may also confound the association between short-term air pollution exposure and SBP. (1, 2) To control for seasonal patterns and temporal trends, sine and cosine terms representing annual periodicity (SINETIME and COSTIME) and day of the week indicators were included in the model. Preliminary exploratory analyses were conducted to assess exposure-response relationships and guide model specification. Dose-response curves for BC exposure, same-day temperature, and age were examined to evaluate functional form. Effect modification was evaluated by including interaction terms between BC exposure and selected covariates, including diabetes status, age, race, BMI, smoking status, statin use, and coronary heart disease (CHD). Interaction terms were evaluated to identify potentially vulnerable subgroups. To evaluate whether the association between temperature and SBP differed between warm and cold seasons, an interaction term between this season variable and same-day temperature were included in one of the models. As a further check, the dataset was split into into two by season designation. Dose-response curves for same-day black carbon were generated for each of these datasets.
+
+$$\mathbb{E}[log(SBP)_{it}] = \beta_0 + \beta_1BC_{it}+ f_1(Age)_{it} +\beta_2Temp_{it}+ \beta_3COSTIME+\beta_4SINETIME+ \beta_5DoW+\beta_xX_{it} $$ All analyses were conducted in R using the mgcv and nlme packages.
+
+###Results
+
+There were a total number of 968 unique individuals that participated in 2,454 study visits (2.5 visits on average per participant). Mean systolic blood pressure across all viists was 130 mmHg. The average age of each participant during their first visit was 69.7, with 26.9% and 10.6% of participants having had a coronary heart disease or diabetes diagnosis, respectively. The same day average black carbon level was slightly higher than the 2-day average (0.99 vs 0.96 µg/m³).
+
+```{r, echo=FALSE}
+
+nas_subject<-nas %>% group_by(ID) %>%
+  summarise(SBP=first(SBP),BMI=first(BMI), FBG=first(FBG),AGE=first(AGE), CHD=first(CHD), DIABETE=first(DIABETE), NEDUC=first(NEDUC))
+
+nas_subject$FBG<-factor(nas_subject$FBG, levels = c(1,2,3), labels = c("<110mg/dL", ">110 or <126 mg/dL",">126 mg/dL"))
+nas_subject$CHD<-factor(nas_subject$CHD, levels = c(0, 1), labels = c("No", "Yes"))
+nas_subject$DIABETE<-factor(nas_subject$DIABETE, levels = c(0, 1), labels = c("No", "Yes"))
+
+label(nas$SBP)  <- "Systolic Blood Pressure, mmHg"
+label(nas$BC24H)  <- 'Black carbon level, same day in µg/m³'
+label(nas$BCMA2) <- "Black carbon level, 2-day average in µg/m³"
+label(nas_subject$NEDUC) <- "Education, years"
+label(nas$TEMPC24H) <- "Ambient Temperature, same day °C"
+label(nas$RHUM24H)   <- "Relative Humidity, same day %"
+label(nas_subject$CHD) <- "Coronary Heart Disease"
+label(nas_subject$FBG) <- "Fasting Blood Glucose"
+label(nas_subject$DIABETE)   <- "Diabetes"
+label(nas_subject$AGE) <- "Age, years"
+
+
+sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+
+movingavg_sp <- gamm(log(SBP) ~ s(BMI)+ s(BCMA2) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+
+final_mod <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+#summary(final_mod$lme)
+
+table1(~BC24H + BCMA2 + TEMPC24H + RHUM24H,  data = nas, caption = "<span style='color: black; font-weight: bold;'>Table 1. Descriptive Statistics of Participant Characteristics and Daily Black Carbon, NAS Cohort", overall = "Descriptive Statistic Values</span>",
+       render.continuous = function(x) {
+         outc <- attr(x, "label")
+         if (outc %in% c("Black carbon level, same day in µg/m³", "Black carbon level, 2-day average in µg/m³")) {
+        c(" " = "", "Mean (SD)" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),"Variance" = sprintf("%.2f", var(x, na.rm = TRUE)), "Min, Median, Max" = sprintf("%.0f, %.0f, %.0f", min(x, na.rm = TRUE),  median(x, na.rm = TRUE),  max(x, na.rm = TRUE)))                            
+         }
+        else {
+            c(" " = "", "Mean (SD)" = sprintf("%.2f (%.2f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)),"Min, Median, Max" = sprintf("%.1f, %.0f, %.0f", min(x, na.rm = TRUE),  median(x, na.rm = TRUE),  max(x, na.rm = TRUE))) 
+        }
+       })
+
+table1(~ SBP+ AGE + BMI + FBG+ CHD + DIABETE + NEDUC, data = nas_subject, caption = "<span style='color: black; font-weight: bold;'> Subject Characteristics at First Visit, NAS Cohort</span>"
+)
+```
+
+```{r dr_sd_temp, echo=FALSE}
+dr_tempBC <- gamm(log(SBP) ~ s(BC24H) + BMI + WARMCOLD + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+#summary(dr_tempBC_rmv$lme)
+dr_tempBC_rmv <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+plot(dr_tempBC$gam, scale=0, select=1, main="Figure 4. Dose-response Curves for Same Day Temperature and Black Carbon")
+plot(dr_tempBC$gam, scale=0, select=5)
+#summary(final_mod$lme)
+```
+
+Based on our final model, the dose-response relationship between same-day black carbon and SBP is positive, and linear (Figure 4). The relationship is also linear between same-day temperature and SBP. After exponentiation of our point estimates, we see that for a 1-unit increase in same-day black carbon, SBP is multiplied by 1.007 (CI 95%: 0.997, 1.017, p-value: 0.16). For 1-unit increase in same-day temperature, SBP is multiplied by 0.999 (CI 95%: 0.998, 1.001, p-value: 0.30). The p-value for both estimates are about our critical value, and our 95% CIs include 0, providing evidence that same-day temperature and BC are not statistically significant. In the model that included an interaction term between same-day BC and diabetes status, we found the point estimate of this term to be -0.017 with a p-value of 0.23. The exponentiated effect estimate for same-day BC and SBP is 1.009 (CI 95%: 0.999, 1.019) among non-diabetics and 0.992 (CI 95%: 0.965, 1.019) among diabetics. In the model that included an interaction term between same-day BC and CHD, the p-value was 0.008. The exponentiated effect estimate for same-day BC and SBP is 1.023 (CI 95%: 1.008, 1.039) among previous CHD and 0.999(CI 95%: 0.988, 1.010) among no CHD. In the model that included an interaction term between cold/warm season and same-day temperature, the p-value for the interaction term was high (0.72). The dose-response curve for same-day BC seem to have the same slope in both the cold season and warm season datasets (Figure 5).
+
+```{r, include=FALSE}
+beta<-dr_tempBC_rmv$lme$coef$fixed[2]
+se<-sqrt(dr_tempBC_rmv$lme$varFix[2,2])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+
+beta<-dr_tempBC_rmv$lme$coef$fixed[5]
+se<-sqrt(dr_tempBC_rmv$lme$varFix[5,5])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+```
+
+```{r diabetes, include=FALSE}
+dia_bc <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT) + BC24H*DIABETE, na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+
+summary(dia_bc$lme)
+beta<-dia_bc$lme$coef$fixed[2]
+se<-sqrt(dia_bc$lme$varFix[2,2])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+
+beta<-dia_bc$lme$coef$fixed[2] + dia_bc$lme$coef$fixed[33]
+se<-sqrt(dia_bc$lme$varFix[2,2]+dia_bc$lme$varFix[33,33]+2*dia_bc$lme$varFix[2,33])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+
+```
+
+```{r CHD, include=FALSE}
+chd_bc <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT) + BC24H*CHD, na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+
+summary(chd_bc$lme)
+beta<-chd_bc$lme$coef$fixed[2]
+se<-sqrt(chd_bc$lme$varFix[2,2])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+
+beta<-chd_bc$lme$coef$fixed[2] + chd_bc$lme$coef$fixed[33]
+se<-sqrt(chd_bc$lme$varFix[2,2]+chd_bc$lme$varFix[33,33]+2*chd_bc$lme$varFix[2,33])
+exp(beta)
+exp((beta-1.96*se))
+exp((beta+1.96*se))
+
+```
+
+##Figure 5. Dose-Response Curves for BC and log SBP by Warm and Cold Season
+
+```{r coldwarm, echo=FALSE}
+cold_nas<-nas %>% filter(nas$WARMCOLD==0) 
+warm_nas<-nas %>% filter(nas$WARMCOLD==1) 
+temp_bc <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT) + TEMPC24H*WARMCOLD, na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+#summary(temp_bc$lme)
+c_temp <- gamm(log(SBP) ~ BC24H + BMI  + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = cold_nas)
+
+w_temp <- gamm(log(SBP) ~ BC24H + BMI  + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = warm_nas)
+plot(w_temp$gam, select=2, main="Dose response curve between same-day temperature and log SBP, warm season only")
+plot(c_temp$gam, select=2, main="Dose response curve between same-day temperature and log SBP, cold season only")
+```
+
+```{r lagged, include=FALSE}
+lagged <- gamm(log(SBP) ~ BC24H + BCD1+BCD2 + BMI + WARMCOLD + s(AGE) + TEMPC24H +TMPCD1 +TMPCD2 + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
+summary(lagged$lme)
+```
+
+```{r lagged_effects_kable, echo=FALSE, warning=FALSE, message=FALSE}
+
+tt_lagged <- summary(lagged$lme)$tTable
+
+idx <- c("XBC24H", "XBCD1", "XBCD2",
+         "XTEMPC24H", "XTMPCD1", "XTMPCD2")
+coef_sub <- tt_lagged[idx, , drop = FALSE]
+
+
+term_labels <- c(
+  "Same-day BC (BC24H)",
+  "BC lag 1 day (BCD1)",
+  "BC lag 2 days (BCD2)",
+  "Same-day Temp (TEMPC24H)",
+  "Temp lag 1 day (TMPCD1)",
+  "Temp lag 2 days (TMPCD2)"
+)
+
+
+tab <- data.frame(
+  Term     = term_labels,
+  Estimate = sprintf("%.3f", coef_sub[, "Value"]),
+  `p-value` = sprintf("%.3f", coef_sub[, "p-value"])
+)
+
+kable(
+  tab,
+    caption = "<span style='color: black; font-weight: bold;'>Table 2. Effect estimates and p-values for same-day and lagged black carbon and temperature </span>",
+  col.names = c("Term", "Estimate", "p-value"),
+  align = c("l", "c", "c")
+)
+
+```
+
+The coefficients for the lagged effects for both same-day temperature and BC were above our critical value (alpha =.05) and close to 0 in magnitude. The correlation between the lagged exposures and same day exposures were not highly correlated in this data (table 2).
+
+##Conclusion Same-day temperature and BC exposure have a positive, linear relationship to SBP. However, the small effect estimates and large (>.05) p-values provide evidence that these relationships are not statistically significant. Diabetes status does not modify the effect of same-day BC exposure on SBP, based on the high p-value of the interaction term and the 95% CIs that contain 1. We see a similar result between the association between SBP and same-day temperature by warm and cold seasons. However, we did see that those with CHD were particularly vulnerable to the effect of same-day BC exposure on SBP. For those with CHD, a 1-unit increase in same-day BC is associated with 2.3% increase in SBP. Some of the effect heterogeneity can be explained by the effect modification of CHD on same-day black carbon exposure. More research should be done on the interaction of CHD and same-day black carbon on SBP.
