@@ -1,6 +1,6 @@
 ---
 title: "ID271 Final Exam"
-author: "Grace Gaultier"
+author: "Grace Gaultier, Anton Roche, and Joel Chavez Ortiz"
 date: "2026-03-12"
 output: html_document
 ---
@@ -22,7 +22,7 @@ output: html_document
 }
 ```
 
-## Methods
+### Methods
 
 ```{r, message=F, include=FALSE}
 library(foreign)
@@ -93,7 +93,7 @@ Additional covariates include body mass index (BMI), relative humidity, race, sm
 $$\mathbb{E}[log(SBP)_{it}] = \beta_0 + \beta_1BC_{it}+ f_1(Age)_{it} +\beta_2Temp_{it}+ \beta_3COSTIME+\beta_4SINETIME+ \beta_5DoW+\beta_xX_{it} $$
 All analyses were conducted in R using the mgcv and nlme packages.
 
-##Results
+###Results
 
 There were a total number of 968 unique individuals that participated in 2,454 study visits (2.5 visits on average per participant). Mean systolic blood pressure across all viists was 130 mmHg. The average age of each participant during their first visit was  69.7, with 26.9% and 10.6% of participants having had a coronary heart disease or diabetes diagnosis, respectively. The same day average black carbon level was slightly higher than the 2-day average (0.99 vs 0.96 µg/m³).
 ```{r, echo=FALSE}
@@ -122,7 +122,7 @@ sameday_sp <- gamm(log(SBP) ~ s(BMI)+ s(BC24H) + WARMCOLD + s(AGE) + s(TEMPC24H)
 movingavg_sp <- gamm(log(SBP) ~ s(BMI)+ s(BCMA2) + WARMCOLD + s(AGE) + s(TEMPC24H)  + s(RHUM24H) + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + s(NEDUC) + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
 
 final_mod <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
-summary(final_mod$lme)
+#summary(final_mod$lme)
 
 table1(~BC24H + BCMA2 + TEMPC24H + RHUM24H,  data = nas, caption = "<span style='color: black; font-weight: bold;'>Table 1. Descriptive Statistics of Participant Characteristics and Daily Black Carbon, NAS Cohort", overall = "Descriptive Statistic Values</span>",
        render.continuous = function(x) {
@@ -138,13 +138,14 @@ table1(~BC24H + BCMA2 + TEMPC24H + RHUM24H,  data = nas, caption = "<span style=
 table1(~ SBP+ AGE + BMI + FBG+ CHD + DIABETE + NEDUC, data = nas_subject, caption = "<span style='color: black; font-weight: bold;'> Subject Characteristics at First Visit, NAS Cohort</span>"
 )
 ```
-```{r dr_sd_temp}
+
+```{r dr_sd_temp, echo=FALSE}
 dr_tempBC <- gamm(log(SBP) ~ s(BC24H) + BMI + WARMCOLD + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
 #summary(dr_tempBC_rmv$lme)
 dr_tempBC_rmv <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
 plot(dr_tempBC$gam, scale=0, select=1, main="Figure 4. Dose-response Curves for Same Day Temperature and Black Carbon")
 plot(dr_tempBC$gam, scale=0, select=5)
-summary(final_mod$lme)
+#summary(final_mod$lme)
 ```
 
 Based on our final model, the dose-response relationship between same-day black carbon and SBP is positive, and linear (Figure 4). The relationship is also linear between same-day temperature and SBP. After exponentiation of our point estimates, we see that for a 1-unit increase in same-day black carbon, SBP is multiplied by 1.007 (CI 95%: 0.997, 1.017, p-value: 0.16). For 1-unit increase in same-day temperature, SBP is multiplied by 0.999 (CI 95%: 0.998, 1.001, p-value: 0.30). The p-value for both estimates are about our critical value, and our 95% CIs include 0, providing evidence that same-day temperature and BC are not statistically significant. In the model that included an interaction term between same-day BC and diabetes status, we found the point estimate of this term to be -0.017 with a p-value of 0.23. The exponentiated effect estimate for same-day BC and SBP is 1.009 (CI 95%: 0.999, 1.019) among non-diabetics and 0.992 (CI 95%: 0.965, 1.019) among diabetics. In the model that included an interaction term between same-day BC and CHD, the p-value was 0.008. The exponentiated effect estimate for same-day BC and SBP is 1.023 (CI 95%: 1.008, 1.039) among previous CHD and 0.999(CI 95%: 0.988, 1.010) among no CHD. In the model that included an interaction term between cold/warm season and same-day temperature, the p-value for the interaction term was high (0.72). The dose-response curve for same-day BC seem to have the same slope in both the cold season and warm season datasets (Figure 5). 
@@ -198,18 +199,18 @@ exp((beta+1.96*se))
 ```
 
 ##Figure 5. Dose-Response Curves for BC and log SBP by Warm and Cold Season
-```{r coldwarm}
+```{r coldwarm, echo=FALSE}
 cold_nas<-nas %>% filter(nas$WARMCOLD==0) 
 warm_nas<-nas %>% filter(nas$WARMCOLD==1) 
 temp_bc <- gamm(log(SBP) ~ BC24H + BMI + WARMCOLD + s(AGE) + TEMPC24H  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT) + TEMPC24H*WARMCOLD, na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
-summary(temp_bc$lme)
+#summary(temp_bc$lme)
 c_temp <- gamm(log(SBP) ~ BC24H + BMI  + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = cold_nas)
 
 w_temp <- gamm(log(SBP) ~ BC24H + BMI  + s(AGE) + s(TEMPC24H)  + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = warm_nas)
 plot(w_temp$gam, select=2, main="Dose response curve between same-day temperature and log SBP, warm season only")
 plot(c_temp$gam, select=2, main="Dose response curve between same-day temperature and log SBP, cold season only")
 ```
-```{r lagged}
+```{r lagged, include=FALSE}
 lagged <- gamm(log(SBP) ~ BC24H + BCD1+BCD2 + BMI + WARMCOLD + s(AGE) + TEMPC24H +TMPCD1 +TMPCD2 + RHUM24H + as.factor(RACE) + TWODRINK + CHD + DIABETE + as.factor(SMK) + as.factor(FBG) + NEDUC + STATIN + SINETIME + COSTIME + as.factor(WKDAY) + as.factor(VISIT), na.action = na.omit, random = list(ID =  ~ 1), family = gaussian(), data = nas)
 summary(lagged$lme)
 ```
